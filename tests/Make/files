@@ -1,0 +1,3 @@
+TestSGSTimeStatistics.C
+
+EXE = $(SGS_TEST_BIN)/TestSGSTimeStatistics

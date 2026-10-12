@@ -1,0 +1,200 @@
+{
+  "manifest": {
+    "suite": "abl",
+    "domain_m": [
+      240.0,
+      120.0,
+      120.0
+    ],
+    "cells": [
+      24,
+      12,
+      12
+    ],
+    "dt_s": 0.5,
+    "release_s": 410.0,
+    "end_s": 440.0,
+    "averaging_s": 400.0,
+    "uStar_m_s": 0.3,
+    "z0_m": 0.1,
+    "kPrescribed_m2_s2": 1.0,
+    "diameters_m": [
+      2e-05,
+      8e-05
+    ],
+    "particleDensity_kg_m3": 1000,
+    "parcels_per_diameter": 3000,
+    "release_center_m": [
+      40,
+      0,
+      50
+    ],
+    "RANS_carrier": "prescribed frozen U/k/epsilon profiles; solvePrimaryRegion false",
+    "LES_carrier": "evolving kEqn LES; shared digital-filter inlet and one-way coupling",
+    "model": "sgsDispersion",
+    "statistics": "internal model-owned exact time window",
+    "functions_in_controlDict": false,
+    "drag_model": "schillerNaumannDrag: paper equation (11), spherical particles",
+    "purpose": "pulse dispersion / model integration; not experimental validation",
+    "mean_drw_k_over_epsilon_at_release_s": 760.7777777777779,
+    "initial_les_sgs_k_at_release": 0.05845739909422398
+  },
+  "run_checks": {
+    "RANS_DRW": {
+      "finished": true,
+      "mesh_ok": true,
+      "max_courant": 0.2578677954,
+      "warnings": 1
+    },
+    "LES_resolved": {
+      "finished": true,
+      "mesh_ok": true,
+      "max_courant": 0.5180152997,
+      "warnings": 1
+    },
+    "LES_SGS": {
+      "finished": true,
+      "mesh_ok": true,
+      "max_courant": 0.5180152997,
+      "warnings": 1
+    }
+  },
+  "identical_LES_carrier_fields": 356,
+  "all_LES_carrier_fields_identical": true,
+  "RANS_UTurb_zero_for_all_saved_particles": true,
+  "LES_without_SGS_UTurb_zero": true,
+  "SGS_nonzero_fluctuation": true,
+  "sigma2_range": [
+    0.01894487608,
+    0.8196734969
+  ],
+  "alpha_range": [
+    0.08828086161,
+    0.9450619834
+  ],
+  "internal_window_duration_s": [
+    400.0,
+    400.0
+  ],
+  "internal_resolved_k_range": [
+    0.05627620542,
+    0.9560317693
+  ],
+  "no_controlDict_functions_in_all_cases": true,
+  "final_statistics": [
+    {
+      "case": "RANS_DRW",
+      "time_s": 440,
+      "age_s": 30.5,
+      "time_after_scheduled_release_s": 30.0,
+      "particle_age_min_s": 30.5,
+      "particle_age_max_s": 30.5,
+      "diameter_um": 20,
+      "active_count": 3000,
+      "mean_x_m": 178.54074933333334,
+      "mean_y_m": 0.0010646493099999998,
+      "mean_z_m": 49.632017633333334,
+      "sigma_x_m": 0.1603022431727709,
+      "sigma_y_m": 0.143919477266144,
+      "sigma_z_m": 0.1451453124024296,
+      "sgs_rms_x_m_s": 0.0,
+      "sgs_rms_y_m_s": 0.0,
+      "sgs_rms_z_m_s": 0.0
+    },
+    {
+      "case": "RANS_DRW",
+      "time_s": 440,
+      "age_s": 30.5,
+      "time_after_scheduled_release_s": 30.0,
+      "particle_age_min_s": 30.5,
+      "particle_age_max_s": 30.5,
+      "diameter_um": 80,
+      "active_count": 3000,
+      "mean_x_m": 177.34625699999998,
+      "mean_y_m": 0.0010646493099999998,
+      "mean_z_m": 44.83553443333333,
+      "sigma_x_m": 0.16394377171558933,
+      "sigma_y_m": 0.143919477266144,
+      "sigma_z_m": 0.14524336833172646,
+      "sgs_rms_x_m_s": 0.0,
+      "sgs_rms_y_m_s": 0.0,
+      "sgs_rms_z_m_s": 0.0
+    },
+    {
+      "case": "LES_resolved",
+      "time_s": 440,
+      "age_s": 30.5,
+      "time_after_scheduled_release_s": 30.0,
+      "particle_age_min_s": 30.5,
+      "particle_age_max_s": 30.5,
+      "diameter_um": 20,
+      "active_count": 3000,
+      "mean_x_m": 165.19943866666665,
+      "mean_y_m": -9.080114159999999,
+      "mean_z_m": 51.47443573333334,
+      "sigma_x_m": 1.1380020519481597,
+      "sigma_y_m": 0.2137796231342635,
+      "sigma_z_m": 0.2728773608231279,
+      "sgs_rms_x_m_s": 0.0,
+      "sgs_rms_y_m_s": 0.0,
+      "sgs_rms_z_m_s": 0.0
+    },
+    {
+      "case": "LES_resolved",
+      "time_s": 440,
+      "age_s": 30.5,
+      "time_after_scheduled_release_s": 30.0,
+      "particle_age_min_s": 30.5,
+      "particle_age_max_s": 30.5,
+      "diameter_um": 80,
+      "active_count": 3000,
+      "mean_x_m": 157.04219366666666,
+      "mean_y_m": -12.794213200000002,
+      "mean_z_m": 44.5995787,
+      "sigma_x_m": 0.5504713272822563,
+      "sigma_y_m": 0.28463006052141904,
+      "sigma_z_m": 0.3667398256661572,
+      "sgs_rms_x_m_s": 0.0,
+      "sgs_rms_y_m_s": 0.0,
+      "sgs_rms_z_m_s": 0.0
+    },
+    {
+      "case": "LES_SGS",
+      "time_s": 440,
+      "age_s": 30.5,
+      "time_after_scheduled_release_s": 30.0,
+      "particle_age_min_s": 30.5,
+      "particle_age_max_s": 30.5,
+      "diameter_um": 20,
+      "active_count": 3000,
+      "mean_x_m": 164.70857033333334,
+      "mean_y_m": -9.537793390433333,
+      "mean_z_m": 50.9216873,
+      "sigma_x_m": 5.457512704922139,
+      "sigma_y_m": 3.1998438828973392,
+      "sigma_z_m": 3.652498730878453,
+      "sgs_rms_x_m_s": 0.16712029711766352,
+      "sgs_rms_y_m_s": 0.16714995515591635,
+      "sgs_rms_z_m_s": 0.15040532983282942
+    },
+    {
+      "case": "LES_SGS",
+      "time_s": 440,
+      "age_s": 30.5,
+      "time_after_scheduled_release_s": 30.0,
+      "particle_age_min_s": 30.5,
+      "particle_age_max_s": 30.5,
+      "diameter_um": 80,
+      "active_count": 3000,
+      "mean_x_m": 157.491593,
+      "mean_y_m": -12.603402536666666,
+      "mean_z_m": 44.9510354,
+      "sigma_x_m": 4.5571705779665885,
+      "sigma_y_m": 3.49892015018111,
+      "sigma_z_m": 4.236127051485453,
+      "sgs_rms_x_m_s": 0.17274674664780829,
+      "sgs_rms_y_m_s": 0.17051347683953627,
+      "sgs_rms_z_m_s": 0.15573428707756926
+    }
+  ]
+}

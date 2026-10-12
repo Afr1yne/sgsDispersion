@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "scope": "native small-inertia limit, beta=0, prescribed linear shear; transverse homogeneous dispersion",
+  "records": [
+    {
+      "dt_s": 0.2,
+      "particle_count": 30000,
+      "native_age_s": 10.200000000005774,
+      "stationary_transport_duration_s": 10.000000000005775,
+      "measured_y_variance_m2": 5.197558556891475,
+      "Taylor_reference_m2": 5.103817185322692,
+      "relative_error": 0.0183669140498135,
+      "SGS_variance_m2_s2": 0.06714371153951443,
+      "dissipation_m2_s3": 0.0029725410005582774,
+      "correlation_time_s": 11.293992501180652
+    },
+    {
+      "dt_s": 0.1,
+      "particle_count": 30000,
+      "native_age_s": 10.100000000000415,
+      "stationary_transport_duration_s": 10.000000000000416,
+      "measured_y_variance_m2": 5.131715723337601,
+      "Taylor_reference_m2": 5.103817185317914,
+      "relative_error": 0.005466210290592466,
+      "SGS_variance_m2_s2": 0.06714371153951443,
+      "dissipation_m2_s3": 0.0029725410005582774,
+      "correlation_time_s": 11.293992501180652
+    },
+    {
+      "dt_s": 0.05,
+      "particle_count": 30000,
+      "native_age_s": 10.049999999994313,
+      "stationary_transport_duration_s": 9.999999999994312,
+      "measured_y_variance_m2": 5.157930139986636,
+      "Taylor_reference_m2": 5.103817185312476,
+      "relative_error": 0.010602447679725735,
+      "SGS_variance_m2_s2": 0.06714371153951443,
+      "dissipation_m2_s3": 0.0029725410005582774,
+      "correlation_time_s": 11.293992501180652
+    }
+  ]
+}

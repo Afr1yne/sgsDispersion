@@ -1,0 +1,15 @@
+#!/bin/bash
+set -eo pipefail
+cd "$(dirname "$0")"
+: "${WM_PROJECT_DIR:?Source OpenFOAM v2606 first}"
+[[ "$WM_PROJECT_VERSION" == v2606 ]] || { echo 'Requires v2606'; exit 1; }
+mkdir -p logs tests/bin
+export SGS_TEST_BIN="$PWD/tests/bin"
+wmake libso src 2>&1 | tee logs/build.log
+wmake tests 2>&1 | tee logs/build-statistics-test.log
+tests/bin/TestSGSTimeStatistics | tee logs/statistics-test.log
+g++ -std=c++17 -O2 -Wall -Wextra -pedantic tests/TestSGSStochasticStep.C -o tests/bin/TestSGSStochasticStep
+tests/bin/TestSGSStochasticStep | tee logs/stochastic-test.log
+g++ -std=c++17 -O2 -Wall -Wextra -pedantic tests/TestSGSBenchmarks.C -o tests/bin/TestSGSBenchmarks
+tests/bin/TestSGSBenchmarks | tee logs/benchmarks.log
+wmake tests/runtime 2>&1 | tee logs/build-cache-test.log

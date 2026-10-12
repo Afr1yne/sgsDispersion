@@ -1,0 +1,30 @@
+#!/bin/bash
+set -eo pipefail
+: "${WM_PROJECT_DIR:?Source OpenFOAM v2606 first}"
+[[ "$WM_PROJECT_VERSION" == v2606 ]] || { echo 'Requires v2606'; exit 1; }
+cd "$(dirname "$0")"
+sgsSource="$WM_PROJECT_USER_DIR/src/sgsDispersion"
+suite="${1:-smoke}"
+[[ "$suite" == smoke || "$suite" == abl ]] || { echo 'Use smoke or abl'; exit 1; }
+[[ -f "$FOAM_USER_LIBBIN/libsgsDispersion.so" ]] || { echo 'Compile src/sgsDispersion with Allwmake first'; exit 1; }
+[[ -f "$suite/manifest.json" ]] || python3 "$sgsSource/tools/makeCases.py" "$suite"
+endTime="$(python3 -c 'import json,sys;print(format(json.load(open(sys.argv[1]))["end_s"],"g"))' "$suite/manifest.json")"
+for name in RANS_DRW LES_resolved LES_SGS; do
+    folder="$PWD/$suite/$name"
+    if [[ -f "$folder/$endTime/lagrangian/kinematicCloud/positions" ]] && grep -q '^End$' "$folder/log.kinematicParcelFoam"; then
+        echo "$name: completed run retained"
+        continue
+    fi
+    echo "Running $suite/$name"
+    blockMesh -case "$folder" > "$folder/log.blockMesh" 2>&1
+    checkMesh -case "$folder" > "$folder/log.checkMesh" 2>&1
+    grep -q 'Mesh OK' "$folder/log.checkMesh"
+    kinematicParcelFoam -case "$folder" > "$folder/log.kinematicParcelFoam" 2>&1
+    grep -q '^End$' "$folder/log.kinematicParcelFoam"
+done
+range="$(python3 -c 'import json,sys;m=json.load(open(sys.argv[1]));print(str(m["release_s"])+":"+str(m["end_s"]))' "$suite/manifest.json")"
+for name in RANS_DRW LES_resolved LES_SGS; do
+    folder="$PWD/$suite/$name"
+    foamToVTK -case "$folder" -ascii -no-boundary -no-internal -time "$range" > "$folder/log.foamToVTK" 2>&1
+done
+python3 "$sgsSource/tools/analyse.py" "$suite"

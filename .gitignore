@@ -1,0 +1,9 @@
+**/lnInclude/
+**/Make/linux*/
+tests/bin/
+**/__pycache__/
+*.so
+*.o
+*.dep
+*.zip
+logs/

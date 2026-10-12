@@ -1,0 +1,13 @@
+PAPER_COEFFICIENTS samples=10000 max_scaled_drift_error=1.6674782444e-15
+HOMOGENEOUS dt=0.5 N=100000 measured_x_variance=31.1760153844 discrete_reference=31.1886306089 continuous_reference=31.1661205147 position_bias=0.00072226166864
+HOMOGENEOUS dt=0.25 N=100000 measured_x_variance=31.3941087728 discrete_reference=31.1717482425 continuous_reference=31.1661205147 position_bias=0.000180571973007
+HOMOGENEOUS dt=0.125 N=100000 measured_x_variance=31.1414589877 discrete_reference=31.1675274594 continuous_reference=31.1661205147 position_bias=4.51434030129e-05
+HEAVY dt=0.1 N=100000 velocity_variance=0.385556162262 velocity_reference=0.384615384615 x_variance=31.0108240624 x_reference=31.0638226308
+HEAVY dt=0.05 N=100000 velocity_variance=0.383605837123 velocity_reference=0.384615384615 x_variance=31.0326490888 x_reference=31.0638226308
+HEAVY dt=0.025 N=100000 velocity_variance=0.387099264694 velocity_reference=0.384615384615 x_variance=31.0426325007 x_reference=31.0638226308
+PAPER_DRAG seven Reynolds numbers checked; Stokes limit exactly one
+WELL_MIXED dt=0.04 N=60000 bins=16 chi_square=10.6048 normalised_velocity_variance=0.996871864573 harmonic_sin=-0.000968360923366 harmonic_cos=-0.00189433554626
+WELL_MIXED dt=0.02 N=60000 bins=16 chi_square=8.3664 normalised_velocity_variance=1.00197485303 harmonic_sin=0.00105427947099 harmonic_cos=-0.00160702181123
+WELL_MIXED dt=0.01 N=60000 bins=16 chi_square=11.1232 normalised_velocity_variance=0.996606254079 harmonic_sin=-0.00123510944948 harmonic_cos=-0.0055510636379
+NEGATIVE_CONTROL dt=.02 chi_square=1858.37493333 normalised_velocity_variance=1.00533422029
+PASS paper drift/drag oracles, analytic tracer/heavy dispersion, time-step bias, nonuniform well-mixed and negative control
