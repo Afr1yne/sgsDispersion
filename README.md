@@ -21,15 +21,16 @@ libs ("libsgsDispersion.so");
 在 `constant/kinematicCloudProperties` 的 `subModels` 中选择模型：
 
 ```foam
-dispersionModel sgsDispersion;
+dispersionModel             sgsDispersion;
+
 sgsDispersionCoeffs
 {
-    averagingTime 400;
-    C0 4;
-    beta 2;
-    cEpsilon 0.93;
-    verticalDirection (0 0 1);
-    stationaryInitial false;
+    averagingTime        400;
+    C0                   4;
+    beta                 2;
+    cEpsilon             0.93;
+    verticalDirection    (0 0 1);
+    stationaryInitial    false;
 }
 ```
 
@@ -41,7 +42,7 @@ sgsDispersionCoeffs
 |---|---|
 | `cases/RANS_DRW` | 固定风速、k、epsilon 剖面，随机游走 |
 | `cases/LES_resolved` | LES 颗粒追踪 |
-| `cases/LES_SGS` | LES 颗粒追踪，启用 SGS 模型 |
+| `cases/LES_SGS` | LES＋sgsDispersion 颗粒扩散模型 |
 
 三组均采用球形颗粒阻力 `schillerNaumannDrag` 和重力，颗粒直径为 20、80 μm。
 
@@ -57,6 +58,6 @@ kinematicParcelFoam
 
 ## 对比结果
 
-![三组颗粒分布](comparison.png)
+![三组颗粒在 y–z 平面的分布](comparison.png)
 
 蓝色：20 μm；红色：80 μm；t=440 s。图示 LES 的数字滤波入口含本机修改。

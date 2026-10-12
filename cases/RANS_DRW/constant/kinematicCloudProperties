@@ -1,31 +1,123 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2606                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
 FoamFile
-{ version 2.0; format ascii; class dictionary; object kinematicCloudProperties; }
-solution
-{ active true; coupled false; transient true; cellValueSourceCorrection false; maxCo 0.3;
- interpolationSchemes { rho cell; U cellPoint; muc cell; }
- integrationSchemes { U analytical; }
+{
+    version         2.0;
+    format          ascii;
+    class           dictionary;
+    object          kinematicCloudProperties;
 }
-constantProperties { rho0 1000; }
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solution
+{
+    active                       true;
+    coupled                      false;
+    transient                    true;
+    cellValueSourceCorrection    false;
+    maxCo                        0.3;
+
+    interpolationSchemes
+    {
+        rho             cell;
+        U               cellPoint;
+        muc             cell;
+    }
+
+    integrationSchemes
+    {
+        U               analytical;
+    }
+}
+
+constantProperties
+{
+    rho0            1000;
+}
+
 subModels
 {
- particleForces { schillerNaumannDrag; gravity; }
- injectionModels { fine
-{ type manualInjection; SOI 410.0; massTotal 1e-9; parcelBasisType fixed; nParticle 1;
- positionsFile releasePositions; U0 (4.54873617153 0 0);
- sizeDistribution { type fixedValue; fixedValueDistribution { value 2e-05; } }
-}
-coarse
-{ type manualInjection; SOI 410.0; massTotal 1e-9; parcelBasisType fixed; nParticle 1;
- positionsFile releasePositions; U0 (4.54873617153 0 0);
- sizeDistribution { type fixedValue; fixedValueDistribution { value 8e-05; } }
-}
- }
- dispersionModel stochasticDispersionRAS;
+    particleForces
+    {
+        schillerNaumannDrag;
+        gravity;
+    }
 
- patchInteractionModel localInteraction;
- localInteractionCoeffs
- { patches (ground { type stick; } "(inlet|outlet|top)" { type escape; }); }
- stochasticCollisionModel none;
- surfaceFilmModel none;
+    injectionModels
+    {
+        fine
+        {
+            type               manualInjection;
+            SOI                410.0;
+            massTotal          1e-9;
+            parcelBasisType    fixed;
+            nParticle          1;
+            positionsFile      releasePositions;
+            U0                 (4.54873617153 0 0);
+
+            sizeDistribution
+            {
+                type            fixedValue;
+
+                fixedValueDistribution
+                {
+                    value           2e-05;
+                }
+            }
+        }
+
+        coarse
+        {
+            type               manualInjection;
+            SOI                410.0;
+            massTotal          1e-9;
+            parcelBasisType    fixed;
+            nParticle          1;
+            positionsFile      releasePositions;
+            U0                 (4.54873617153 0 0);
+
+            sizeDistribution
+            {
+                type            fixedValue;
+
+                fixedValueDistribution
+                {
+                    value           8e-05;
+                }
+            }
+        }
+    }
+
+    dispersionModel             stochasticDispersionRAS;
+    patchInteractionModel       localInteraction;
+
+    localInteractionCoeffs
+    {
+        patches
+        (
+            ground
+            {
+                type            stick;
+            }
+
+            "(inlet|outlet|top)"
+            {
+                type            escape;
+            }
+        );
+    }
+
+    stochasticCollisionModel    none;
+    surfaceFilmModel            none;
 }
-cloudFunctions {}
+
+cloudFunctions
+{
+}
+
+// ************************************************************************* //
