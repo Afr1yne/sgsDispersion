@@ -1,13 +1,70 @@
 /*---------------------------------------------------------------------------*\
-    Model-owned SGS production and exact time-window statistics.
-    SPDX-License-Identifier: GPL-3.0-or-later
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | www.openfoam.com
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+    Copyright (C) 2026 Afr1yne
+-------------------------------------------------------------------------------
+License
+    This file is part of sgsDispersion, an OpenFOAM user library.
+
+    sgsDispersion is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    sgsDispersion is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with sgsDispersion.  If not, see <http://www.gnu.org/licenses/>.
+
 \*---------------------------------------------------------------------------*/
 
 #include "SGSDispersion.H"
 #include "turbulenceModel.H"
 #include "fvcGrad.H"
 #include "zeroGradientFvPatchFields.H"
-#include <limits>
+#include <cmath>
+
+// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+
+template<class CloudType>
+Foam::autoPtr<Foam::volScalarField>
+Foam::SGSDispersion<CloudType>::makeScalarField
+(
+    const word& name,
+    const dimensionSet& dims,
+    const IOobject::writeOption write
+) const
+{
+    const fvMesh& mesh = this->owner().mesh();
+
+    return autoPtr<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                this->owner().name() + name,
+                mesh.time().timeName(),
+                mesh,
+                IOobject::NO_READ,
+                write
+            ),
+            mesh,
+            dimensionedScalar("zero", dims, 0),
+            zeroGradientFvPatchScalarField::typeName
+        )
+    );
+}
+
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType>
 Foam::SGSDispersion<CloudType>::SGSDispersion
@@ -19,7 +76,10 @@ Foam::SGSDispersion<CloudType>::SGSDispersion
     DispersionModel<CloudType>(dict, owner, typeName),
     C0_(this->coeffDict().template getOrDefault<scalar>("C0", 4)),
     beta_(this->coeffDict().template getOrDefault<scalar>("beta", 2)),
-    cEpsilon_(this->coeffDict().template getOrDefault<scalar>("cEpsilon", 0.93)),
+    cEpsilon_
+    (
+        this->coeffDict().template getOrDefault<scalar>("cEpsilon", 0.93)
+    ),
     verticalDirection_
     (
         this->coeffDict().template getOrDefault<vector>
@@ -55,56 +115,54 @@ Foam::SGSDispersion<CloudType>::SGSDispersion
     verticalDirection_ /= mag(verticalDirection_);
 
     const fvMesh& mesh = owner.mesh();
-    const auto& turbulence = mesh.template lookupObject<turbulenceModel>
+    const turbulenceModel& turbulence = mesh.lookupObject<turbulenceModel>
     (
         IOobject::groupName(turbulenceModel::propertiesName, owner.U().group())
     );
 
-    if (turbulence.template get<word>("simulationType") != "LES")
+    if (turbulence.get<word>("simulationType") != "LES")
     {
         FatalErrorInFunction
             << "sgsDispersion requires simulationType LES"
             << exit(FatalError);
     }
 
-    auto makeScalarField = [&](const word& name, const dimensionSet& dims,
-                               const IOobject::writeOption write)
-    {
-        return autoPtr<volScalarField>
-        (
-            new volScalarField
-            (
-                IOobject
-                (
-                    owner.name() + name, mesh.time().timeName(), mesh,
-                    IOobject::NO_READ, write
-                ),
-                mesh, dimensionedScalar("zero", dims, 0),
-                zeroGradientFvPatchScalarField::typeName
-            )
-        );
-    };
-
-    sigma2_ = makeScalarField("SGSVariance", sqr(dimVelocity), IOobject::AUTO_WRITE);
-    alpha_ = makeScalarField("SGSFraction", dimless, IOobject::AUTO_WRITE);
+    sigma2_ = makeScalarField
+    (
+        "SGSVariance", sqr(dimVelocity), IOobject::AUTO_WRITE
+    );
+    alpha_ = makeScalarField
+    (
+        "SGSFraction", dimless, IOobject::AUTO_WRITE
+    );
     epsilon_ = makeScalarField
     (
         "SGSDissipation", sqr(dimVelocity)/dimTime, IOobject::AUTO_WRITE
     );
-    resolvedK_ = makeScalarField("SGSResolvedK", sqr(dimVelocity), IOobject::AUTO_WRITE);
-    windowDuration_ = makeScalarField("SGSWindowDuration", dimTime, IOobject::AUTO_WRITE);
+    resolvedK_ = makeScalarField
+    (
+        "SGSResolvedK", sqr(dimVelocity), IOobject::AUTO_WRITE
+    );
+    windowDuration_ = makeScalarField
+    (
+        "SGSWindowDuration", dimTime, IOobject::AUTO_WRITE
+    );
     dSigma2_ = makeScalarField
     (
         "SGSVarianceDt", sqr(dimVelocity)/dimTime, IOobject::NO_WRITE
     );
 
-    Info<< "sgsDispersion: internal production/velocity statistics; averagingTime="
+    Info<< "sgsDispersion: averagingTime="
         << this->coeffDict().template get<scalar>("averagingTime")
-        << " s; no function objects required; LES delta field is used." << nl;
+        << " s." << nl;
 }
 
+
 template<class CloudType>
-Foam::SGSDispersion<CloudType>::SGSDispersion(const SGSDispersion& rhs)
+Foam::SGSDispersion<CloudType>::SGSDispersion
+(
+    const SGSDispersion<CloudType>& rhs
+)
 :
     DispersionModel<CloudType>(rhs),
     C0_(rhs.C0_),
@@ -120,27 +178,63 @@ Foam::SGSDispersion<CloudType>::SGSDispersion(const SGSDispersion& rhs)
     previousVariance_(rhs.previousVariance_)
 {
     // Deep-copy statistics for cloud snapshots; copied fields are unregistered.
-    if (rhs.sigma2_) sigma2_.reset(new volScalarField(*rhs.sigma2_));
-    if (rhs.alpha_) alpha_.reset(new volScalarField(*rhs.alpha_));
-    if (rhs.epsilon_) epsilon_.reset(new volScalarField(*rhs.epsilon_));
-    if (rhs.resolvedK_) resolvedK_.reset(new volScalarField(*rhs.resolvedK_));
-    if (rhs.windowDuration_) windowDuration_.reset(new volScalarField(*rhs.windowDuration_));
-    if (rhs.dSigma2_) dSigma2_.reset(new volScalarField(*rhs.dSigma2_));
-    if (rhs.gradSigma2_) gradSigma2_.reset(new volVectorField(*rhs.gradSigma2_));
+    if (rhs.sigma2_)
+    {
+        sigma2_.reset(new volScalarField(*rhs.sigma2_));
+    }
+    if (rhs.alpha_)
+    {
+        alpha_.reset(new volScalarField(*rhs.alpha_));
+    }
+    if (rhs.epsilon_)
+    {
+        epsilon_.reset(new volScalarField(*rhs.epsilon_));
+    }
+    if (rhs.resolvedK_)
+    {
+        resolvedK_.reset(new volScalarField(*rhs.resolvedK_));
+    }
+    if (rhs.windowDuration_)
+    {
+        windowDuration_.reset(new volScalarField(*rhs.windowDuration_));
+    }
+    if (rhs.dSigma2_)
+    {
+        dSigma2_.reset(new volScalarField(*rhs.dSigma2_));
+    }
+    if (rhs.gradSigma2_)
+    {
+        gradSigma2_.reset(new volVectorField(*rhs.gradSigma2_));
+    }
 }
+
+// * * * * * * * * * * * * * * * * Destructors  * * * * * * * * * * * * * * * //
+
+template<class CloudType>
+Foam::SGSDispersion<CloudType>::~SGSDispersion()
+{}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class CloudType>
 void Foam::SGSDispersion<CloudType>::cacheFields(const bool store)
 {
-    if (!store) return;
+    if (!store)
+    {
+        return;
+    }
 
     const fvMesh& mesh = this->owner().mesh();
     const Time& time = mesh.time();
 
-    if (lastTimeIndex_ == time.timeIndex()) return;
+    if (lastTimeIndex_ == time.timeIndex())
+    {
+        return;
+    }
     lastTimeIndex_ = time.timeIndex();
 
-    const auto& turbulence = mesh.template lookupObject<turbulenceModel>
+    const turbulenceModel& turbulence = mesh.lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -148,7 +242,7 @@ void Foam::SGSDispersion<CloudType>::cacheFields(const bool store)
         )
     );
 
-    const volScalarField& delta = mesh.template lookupObject<volScalarField>
+    const volScalarField& delta = mesh.lookupObject<volScalarField>
     (
         IOobject::groupName("delta", this->owner().U().group())
     );
@@ -216,6 +310,7 @@ void Foam::SGSDispersion<CloudType>::cacheFields(const bool store)
     havePreviousVariance_ = true;
 }
 
+
 template<class CloudType>
 Foam::vector Foam::SGSDispersion<CloudType>::update
 (
@@ -227,7 +322,10 @@ Foam::vector Foam::SGSDispersion<CloudType>::update
     scalar& tTurb
 )
 {
-    if (dt <= 0) return Uc + UTurb;
+    if (dt <= 0)
+    {
+        return Uc + UTurb;
+    }
 
     const scalar variance = sigma2_()[celli];
     const scalar eps = epsilon_()[celli];
@@ -244,7 +342,7 @@ Foam::vector Foam::SGSDispersion<CloudType>::update
 
     if (tTurb == 0 && stationaryInitial_)
     {
-        for (direction cmpt=0; cmpt<3; ++cmpt)
+        for (direction cmpt = 0; cmpt < vector::nComponents; ++cmpt)
         {
             UTurb[cmpt] = sqrt(variance)*random.template GaussNormal<scalar>();
         }
@@ -254,25 +352,32 @@ Foam::vector Foam::SGSDispersion<CloudType>::update
     const vector gradient = gradSigma2_()[celli];
     const auto local = sgsDispersionDetail::coefficients
     (
-        variance, eps, alpha, {{U.x(), U.y(), U.z()}}, U & verticalDirection_,
-        {{gradient.x(), gradient.y(), gradient.z()}}, dSigma2_()[celli],
-        C0_, beta_
+        variance,
+        eps,
+        alpha,
+        U,
+        U & verticalDirection_,
+        gradient,
+        dSigma2_()[celli],
+        C0_,
+        beta_
     );
     const scalar count = std::ceil(max(mag(local.a), alpha/local.Tp)*dt/0.25);
 
     if (!std::isfinite(count) || count > 10000)
     {
         FatalErrorInFunction
-            << "Invalid or excessive SGS drift; reduce time step or inspect variance"
+            << "Invalid or excessive SGS drift; reduce time step"
+            << " or inspect variance"
             << exit(FatalError);
     }
 
     const label nSubSteps = max(label(1), label(count));
 
     // Exact linear transition with coefficients frozen within this parcel call.
-    for (label step=0; step<nSubSteps; ++step)
+    for (label step = 0; step < nSubSteps; ++step)
     {
-        for (direction cmpt=0; cmpt<3; ++cmpt)
+        for (direction cmpt = 0; cmpt < vector::nComponents; ++cmpt)
         {
             const auto transition = sgsDispersionDetail::transition
             (
@@ -287,3 +392,5 @@ Foam::vector Foam::SGSDispersion<CloudType>::update
     tTurb += dt;
     return Uc + UTurb;
 }
+
+// ************************************************************************* //

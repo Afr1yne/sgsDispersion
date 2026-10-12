@@ -1,3 +1,5 @@
+SGSDispersion/SGSStochasticStep.C
+SGSDispersion/SGSTimeStatistics.C
 makeSGSDispersion.C
 
 LIB = $(FOAM_USER_LIBBIN)/libsgsDispersion

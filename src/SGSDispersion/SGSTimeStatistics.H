@@ -1,6 +1,37 @@
 /*---------------------------------------------------------------------------*\
-    Internal time-window statistics for the SGS dispersion model.
-    SPDX-License-Identifier: GPL-3.0-or-later
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | www.openfoam.com
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+    Copyright (C) 2026 Afr1yne
+-------------------------------------------------------------------------------
+License
+    This file is part of sgsDispersion, an OpenFOAM user library.
+
+    sgsDispersion is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    sgsDispersion is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with sgsDispersion.  If not, see <http://www.gnu.org/licenses/>.
+
+Class
+    Foam::SGSTimeStatistics
+
+Description
+    Time-weighted velocity and production statistics over a sliding window.
+
+SourceFiles
+    SGSTimeStatistics.C
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef SGSTimeStatistics_H
@@ -8,139 +39,117 @@
 
 #include "vectorField.H"
 #include "scalarField.H"
-#include "error.H"
-#include <deque>
-#include <cmath>
+#include "FIFOStack.H"
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
 
+/*---------------------------------------------------------------------------*\
+                       Class SGSTimeStatistics Declaration
+\*---------------------------------------------------------------------------*/
+
 class SGSTimeStatistics
 {
-    struct Sample
-    {
-        scalar weight;
-        vectorField U;
-        scalarField P;
+    // Private Data Types
 
-        Sample(const scalar dt, const vectorField& u, const scalarField& p)
-        : weight(dt), U(u), P(p)
-        {}
-    };
-
-    scalar window_;
-    scalar duration_;
-    vectorField meanU_;
-    scalarField central2_;
-    scalarField meanP_;
-    std::deque<Sample> samples_;
-
-    void removeWeight(const Sample& sample, const scalar weight)
-    {
-        const scalar remaining = duration_ - weight;
-
-        forAll(meanU_, celli)
+        //- A velocity and production sample with its time weight
+        struct Sample
         {
-            const vector delta = sample.U[celli] - meanU_[celli];
-            const vector newMean = meanU_[celli] - weight/remaining*delta;
+            scalar weight;
+            vectorField U;
+            scalarField P;
 
-            central2_[celli] = max
+            Sample
             (
-                scalar(0),
-                central2_[celli]
-              - weight*(delta & (sample.U[celli] - newMean))
+                const scalar dt,
+                const vectorField& u,
+                const scalarField& p
             );
+        };
 
-            meanU_[celli] = newMean;
-            meanP_[celli] -=
-                weight/remaining*(sample.P[celli] - meanP_[celli]);
-        }
 
-        duration_ = remaining;
-    }
+    // Private Data
+
+        //- Requested averaging duration
+        scalar window_;
+
+        //- Duration currently represented by the samples
+        scalar duration_;
+
+        //- Time-weighted mean velocity
+        vectorField meanU_;
+
+        //- Time-weighted central second moment
+        scalarField central2_;
+
+        //- Time-weighted mean production
+        scalarField meanP_;
+
+        //- Samples ordered from oldest to newest
+        FIFOStack<Sample> samples_;
+
+
+    // Private Member Functions
+
+        //- Remove a complete or partial sample weight
+        void removeWeight(const Sample& sample, const scalar weight);
+
 
 public:
 
-    SGSTimeStatistics(const label size, const scalar window)
-    :
-        window_(window),
-        duration_(0),
-        meanU_(size, Zero),
-        central2_(size, 0),
-        meanP_(size, 0)
-    {
-        if (!(window_ > 0) || !std::isfinite(window_))
-        {
-            FatalErrorInFunction
-                << "averagingTime must be finite and positive"
-                << exit(FatalError);
-        }
-    }
+    // Constructors
 
-    void add
-    (
-        const vectorField& U,
-        const scalarField& production,
-        const scalar dt
-    )
-    {
-        if
+        //- Construct for a fixed number of cells and averaging duration
+        SGSTimeStatistics(const label size, const scalar window);
+
+
+    // Member Functions
+
+        //- Add a sample representing dt seconds
+        void add
         (
-            U.size() != meanU_.size()
-         || production.size() != meanP_.size()
-         || !(dt > 0)
-         || !std::isfinite(dt)
-        )
+            const vectorField& U,
+            const scalarField& production,
+            const scalar dt
+        );
+
+        //- Duration represented by the current samples
+        scalar duration() const
         {
-            FatalErrorInFunction
-                << "Invalid statistics sample; fixed cell topology is required"
-                << exit(FatalError);
+            return duration_;
         }
 
-        const scalar total = duration_ + dt;
-
-        forAll(U, celli)
+        //- Number of stored samples
+        label sampleCount() const
         {
-            const vector delta = U[celli] - meanU_[celli];
-            const vector newMean = meanU_[celli] + dt/total*delta;
-
-            central2_[celli] += dt*(delta & (U[celli] - newMean));
-            meanU_[celli] = newMean;
-            meanP_[celli] += dt/total*(production[celli] - meanP_[celli]);
+            return samples_.size();
         }
 
-        duration_ = total;
-        samples_.emplace_back(dt, U, production);
-
-        // Retain exactly window_ seconds, including a partial oldest interval.
-        while (duration_ > window_)
+        //- Mean velocity
+        const vectorField& meanU() const
         {
-            Sample& oldest = samples_.front();
-            const scalar removed = min(oldest.weight, duration_ - window_);
-
-            removeWeight(oldest, removed);
-            oldest.weight -= removed;
-
-            if (oldest.weight <= SMALL)
-            {
-                samples_.pop_front();
-            }
+            return meanU_;
         }
-    }
 
-    scalar duration() const { return duration_; }
-    label sampleCount() const { return label(samples_.size()); }
-    const vectorField& meanU() const { return meanU_; }
-    const scalarField& meanProduction() const { return meanP_; }
+        //- Mean production
+        const scalarField& meanProduction() const
+        {
+            return meanP_;
+        }
 
-    scalar resolvedK(const label celli) const
-    {
-        return duration_ > VSMALL
-            ? max(scalar(0), 0.5*central2_[celli]/duration_)
-            : scalar(0);
-    }
+        //- Resolved turbulent kinetic energy in a cell
+        scalar resolvedK(const label celli) const;
 };
+
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace Foam
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 #endif
+
+// ************************************************************************* //

@@ -18,5 +18,10 @@ EXE_INC = \
     -I$(LIB_SRC)/thermophysicalModels/thermophysicalProperties/lnInclude
 
 LIB_LIBS = \
-    -lfiniteVolume -lmeshTools -llagrangian -llagrangianIntermediate \
-    -llagrangianTurbulence -lturbulenceModels -ldistributionModels
+    -lfiniteVolume \
+    -lmeshTools \
+    -llagrangian \
+    -llagrangianIntermediate \
+    -llagrangianTurbulence \
+    -lturbulenceModels \
+    -ldistributionModels

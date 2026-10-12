@@ -1,77 +1,118 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-#ifndef SGS_STOCHASTIC_STEP_H
-#define SGS_STOCHASTIC_STEP_H
-#include <cmath>
-#include <stdexcept>
-#include <array>
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | www.openfoam.com
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+    Copyright (C) 2026 Afr1yne
+-------------------------------------------------------------------------------
+License
+    This file is part of sgsDispersion, an OpenFOAM user library.
 
+    sgsDispersion is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    sgsDispersion is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with sgsDispersion.  If not, see <http://www.gnu.org/licenses/>.
+
+Namespace
+    Foam::sgsDispersionDetail
+
+Description
+    Local coefficients and exact linear transition for SGS particle dispersion.
+
+SourceFiles
+    SGSStochasticStep.C
+
+\*---------------------------------------------------------------------------*/
+
+#ifndef SGSStochasticStep_H
+#define SGSStochasticStep_H
+
+#include "scalar.H"
+#include "vector.H"
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+namespace Foam
+{
 namespace sgsDispersionDetail
 {
-// Exact transition for frozen local coefficients: du=(-a*u+b)dt+B*dW.
-inline double exprel(const double x)
-{
-    if (std::abs(x)<1e-5)
-        return 1+x/2+x*x/6+x*x*x/24+x*x*x*x/120;
-    return std::expm1(x)/x;
-}
-struct Transition { double decay, forcing, noiseStd; };
-inline Transition transition(double a, double b, double B2, double dt)
-{
-    if (!(dt>=0 && B2>=0) || !std::isfinite(a+b+B2+dt))
-        throw std::domain_error("Invalid SGS transition coefficients");
-    const double x=-a*dt;
-    if (std::abs(x)>300)
-        throw std::domain_error("Variance drift unresolved: reduce time step");
-    return {std::exp(x), b*dt*exprel(x),
-            std::sqrt(B2*dt*exprel(2*x))};
-}
-inline double particleTime(double variance, double epsilon, double verticalSpeed,
-                           double C0=4, double beta=2)
-{
-    return (2*variance/(C0*epsilon)) /
-           std::sqrt(1+std::pow(beta*verticalSpeed,2)/variance);
-}
 
-struct Coefficients
+//- Exact transition for du = (-a*u + b)*dt + B*dW with frozen coefficients
+struct Transition
 {
-    double Tp, a, B2;
-    std::array<double, 3> forcing;
+    scalar decay;
+    scalar forcing;
+    scalar noiseStd;
 };
 
-inline double dragCorrection(double Re)
-{
-    if (!(Re>=0) || !std::isfinite(Re))
-        throw std::domain_error("Invalid particle Reynolds number");
-    return 1+0.15*std::pow(Re,0.687);
-}
 
-// Comola et al. (2019), equations (4) and (8), evaluated on a heavy-particle path.
-// The spatial/material derivatives are inputs, independently of their FV discretisation.
-inline Coefficients coefficients
-(
-    double variance, double epsilon, double fraction,
-    const std::array<double, 3>& velocity, double verticalSpeed,
-    const std::array<double, 3>& gradient, double partialVarianceDt,
-    double C0=4, double beta=2
-)
+//- Local coefficients of the SGS velocity equation
+struct Coefficients
 {
-    if (!(variance>0 && epsilon>0 && fraction>0 && fraction<=1 && C0>0 && beta>=0))
-        throw std::domain_error("Invalid SGS model coefficients");
-    double material=partialVarianceDt;
-    std::array<double,3> forcing;
-    for (int i=0; i<3; ++i)
-    {
-        if (!std::isfinite(velocity[i]) || !std::isfinite(gradient[i]))
-            throw std::domain_error("Nonfinite SGS derivative or particle velocity");
-        material += velocity[i]*gradient[i];
-        forcing[i] = 0.5*gradient[i];
-    }
-    const double Tp=particleTime(variance,epsilon,verticalSpeed,C0,beta);
-    const double a=fraction/Tp-0.5*material/variance;
-    const double B2=2*fraction*variance/Tp;
-    if (!(Tp>0) || !std::isfinite(Tp+a+B2))
-        throw std::domain_error("Nonfinite SGS model coefficients");
-    return {Tp,a,B2,forcing};
-}
-}
+    scalar Tp;
+    scalar a;
+    scalar B2;
+    vector forcing;
+};
+
+
+//- Evaluate (exp(x) - 1)/x, including the limit at zero
+scalar exprel(const scalar x);
+
+//- Calculate the exact frozen-coefficient transition
+Transition transition
+(
+    const scalar a,
+    const scalar b,
+    const scalar B2,
+    const scalar dt
+);
+
+//- Calculate the correlation time along a particle trajectory
+scalar particleTime
+(
+    const scalar variance,
+    const scalar epsilon,
+    const scalar verticalSpeed,
+    const scalar C0 = 4,
+    const scalar beta = 2
+);
+
+//- Spherical-particle drag correction, Comola et al. (2019), Eq. (11)
+scalar dragCorrection(const scalar Re);
+
+//- Assemble Comola et al. (2019), Eqs. (4) and (8)
+Coefficients coefficients
+(
+    const scalar variance,
+    const scalar epsilon,
+    const scalar fraction,
+    const vector& velocity,
+    const scalar verticalSpeed,
+    const vector& gradient,
+    const scalar partialVarianceDt,
+    const scalar C0 = 4,
+    const scalar beta = 2
+);
+
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+} // End namespace sgsDispersionDetail
+} // End namespace Foam
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 #endif
+
+// ************************************************************************* //
