@@ -1,0 +1,9 @@
+FoamFile
+{ version 2.0; format ascii; class dictionary; object controlDict; }
+application kinematicParcelFoam;
+startFrom startTime; startTime 0; stopAt endTime; endTime 440.0;
+deltaT 0.5; adjustTimeStep false;
+writeControl runTime; writeInterval 5;
+purgeWrite 0; writeFormat ascii; writePrecision 10; writeCompression off;
+timeFormat general; timePrecision 9; runTimeModifiable true;
+libs ("libsgsDispersion.so" "libatmosphericModels.so");

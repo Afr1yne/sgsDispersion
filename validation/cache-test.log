@@ -1,9 +1,0 @@
-Cache oracle: carrier time=0 current dt=0.2 field interval=0 duration=0 dVariance/dt=0
-Cache oracle: carrier time=0.2 current dt=0.1 field interval=0.2 duration=0.2 dVariance/dt=0.0180233126214
-Cache oracle: carrier time=0.3 current dt=0.35 field interval=0.1 duration=0.3 dVariance/dt=0.006091917423491
-sgsDispersion: internal window filled; duration=0.5 s; samples=3
-Cache oracle: carrier time=0.65 current dt=0.05 field interval=0.35 duration=0.5 dVariance/dt=0.01595711758265
-Cache oracle: carrier time=0.7 current dt=0.5 field interval=0.05 duration=0.5 dVariance/dt=0.01817782005732
-Cache oracle: carrier time=1.2 current dt=0.1 field interval=0.5 duration=0.5 dVariance/dt=0.02319185048303
-Cache oracle: carrier time=1.3 current dt=0.025 field interval=0.1 duration=0.5 dVariance/dt=0.003874032985633
-PASS native irregular-time cache, production, weighted variance, partial expiry, derivative and duplicate-call checks; max error=6.844163415501e-15

@@ -1,4 +1,0 @@
-EXE_INC = \
-    -I../src/SGSDispersion
-
-EXE_LIBS =

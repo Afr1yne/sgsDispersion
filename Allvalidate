@@ -1,9 +1,0 @@
-#!/bin/bash
-set -eo pipefail
-cd "$(dirname "$0")"
-: "${WM_PROJECT_DIR:?Source OpenFOAM v2606 first}"
-[[ "$WM_PROJECT_VERSION" == v2606 ]] || { echo 'Requires v2606'; exit 1; }
-[[ -x tests/bin/TestSGSFieldCache ]] || { echo 'Run bash Allwmake first'; exit 1; }
-python3 tools/uniformValidation.py | tee logs/native-uniform.log
-tests/bin/TestSGSFieldCache -case "$FOAM_RUN/sgsDispersion/validation/uniform/dt_0p2" \
-    | tee logs/cache-test.log

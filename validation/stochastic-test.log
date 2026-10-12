@@ -1,2 +1,0 @@
-PASS exact transition, limits, settling, variance and correlation
-samples=200000 mean=-0.000993869 variance=0.397314 correlation=0.445333 expected=0.449329
